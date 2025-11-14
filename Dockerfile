@@ -66,6 +66,8 @@ RUN npm install drizzle-orm --legacy-peer-deps
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
+RUN chown -R nextjs:nodejs /app
+
 USER nextjs
 
 EXPOSE 3000
