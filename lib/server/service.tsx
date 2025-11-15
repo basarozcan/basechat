@@ -12,7 +12,7 @@ import { Member, MemberType } from "@/lib/api";
 import { getDisabledModels } from "@/lib/llm/types";
 import * as settings from "@/lib/server/settings";
 
-import { buildTags, buildTenantTag, buildTenantUserTag } from "../../cache-handler";
+import { buildTags, buildTenantTag, buildTenantUserTag } from "../../cache-handler.cjs";
 import { InviteHtml, PagesLimitReachedHtml, ResetPasswordHtml, VerifyEmailHtml } from "../mail";
 
 import { provisionBillingCustomer } from "./billing";

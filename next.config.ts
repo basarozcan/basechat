@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: false,
   // Only use Redis cache handler if REDIS_URL is present
   ...(process.env.USE_REDIS && {
-    cacheHandler: require.resolve("./cache-handler.ts"),
+    cacheHandler: require.resolve("./cache-handler.cjs"),
     cacheMaxMemorySize: 0, // disable default in-memory caching
   }),
   output: "standalone",

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const res = await client.documents.create({
       file: file,
       partition,
-      mode,
+      mode: {},
       metadata,
     });
 
