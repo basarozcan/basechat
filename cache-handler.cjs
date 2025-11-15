@@ -1,47 +1,27 @@
-import { createClient } from "redis";
-import type { RedisClientType } from "redis";
-
-interface CacheEntry {
-  value: any;
-  lastModified: number;
-  tags: string[];
-}
+const { createClient } = require("redis");
 
 const DEFAULT_TTL = 84600; // 24 hours
 const CACHE_KEY_PREFIX = "basechat:";
 const TAG_INDEX_PREFIX = "basechat:tags:";
 
-/**
- * Builds a tenant-user tag for cache invalidation purposes
- */
-export function buildTenantUserTag(userId: string, slug: string): string {
+function buildTenantUserTag(userId, slug) {
   return `tenant:${slug}:user:${userId}`;
 }
 
-/**
- * Builds a tenant tag for cache invalidation purposes
- */
-export function buildTenantTag(slug: string): string {
+function buildTenantTag(slug) {
   return `tenant:${slug}`;
 }
 
-/**
- * Builds tags array with tenant-wide and user-specific tags
- */
-export function buildTags(userId: string, slug: string): string[] {
-  return [
-    buildTenantUserTag(userId, slug), // User-specific
-    buildTenantTag(slug), // Tenant-wide
-  ];
+function buildTags(userId, slug) {
+  return [buildTenantUserTag(userId, slug), buildTenantTag(slug)];
 }
 
-export default class CacheHandler {
-  private redisClient: RedisClientType | null = null;
-  private isConnected: boolean = false;
-  private connectionPromise: Promise<boolean> | null = null;
-
+class CacheHandler {
   constructor() {
-    // lazily initialize Redis
+    this.redisClient = null;
+    this.isConnected = false;
+    this.connectionPromise = null;
+
     const redisUrl = process.env.REDIS_URL;
 
     if (!redisUrl) {
@@ -54,7 +34,6 @@ export default class CacheHandler {
         url: redisUrl,
         socket: {
           reconnectStrategy: (retries) => {
-            // Fail fast - don't retry indefinitely
             if (retries > 3) {
               console.warn("Redis reconnection attempts exceeded, disabling cache");
               return false;
@@ -64,8 +43,7 @@ export default class CacheHandler {
         },
       });
 
-      // Set up error handler
-      this.redisClient.on("error", (err: any) => {
+      this.redisClient.on("error", (err) => {
         console.error("Redis client error:", err);
         this.isConnected = false;
       });
@@ -84,24 +62,17 @@ export default class CacheHandler {
     }
   }
 
-  private async ensureConnected(): Promise<boolean> {
-    if (!this.redisClient) {
-      return false;
-    }
+  async ensureConnected() {
+    if (!this.redisClient) return false;
+    if (this.isConnected) return true;
 
-    if (this.isConnected) {
-      return true;
-    }
-
-    // If connection is already in progress, wait for it
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
 
-    // Start new connection attempt
     this.connectionPromise = (async () => {
       try {
-        await this.redisClient!.connect();
+        await this.redisClient.connect();
         this.isConnected = true;
         return true;
       } catch (error) {
@@ -116,17 +87,11 @@ export default class CacheHandler {
     return this.connectionPromise;
   }
 
-  /**
-   * Gets the Redis key for a tag index
-   */
-  private getTagIndexKey(tag: string): string {
+  getTagIndexKey(tag) {
     return `${TAG_INDEX_PREFIX}${tag}`;
   }
 
-  /**
-   * Get a value from cache by key
-   */
-  async get(key: string): Promise<CacheEntry | undefined> {
+  async get(key) {
     const prefixedKey = `${CACHE_KEY_PREFIX}${key}`;
     try {
       const connected = await this.ensureConnected();
@@ -135,28 +100,24 @@ export default class CacheHandler {
         return undefined;
       }
 
-      const data = await this.redisClient!.get(prefixedKey);
-      if (!data) {
-        return undefined;
-      }
+      const data = await this.redisClient.get(prefixedKey);
+      if (!data) return undefined;
 
-      const parsed: CacheEntry = JSON.parse(data);
-      return parsed;
+      return JSON.parse(data);
     } catch (error) {
       console.warn("Error getting cache key:", error);
       return undefined;
     }
   }
 
-  /**
-   * Set a value in cache with tags
-   */
-  async set(key: string, data: any, ctx: any): Promise<void> {
+  async set(key, data, ctx) {
     const prefixedKey = `${CACHE_KEY_PREFIX}${key}`;
+
     const fixedCtx = {
       ...ctx,
       tags: Array.isArray(ctx.tags) ? ctx.tags : [ctx.tags],
     };
+
     const fixedData = {
       ...data,
       revalidate: typeof data.revalidate === "number" ? data.revalidate : DEFAULT_TTL,
@@ -166,29 +127,22 @@ export default class CacheHandler {
       const connected = await this.ensureConnected();
       if (!connected) {
         console.warn("Redis unavailable in set()");
-        return undefined;
+        return;
       }
 
-      // Create the cache entry
-      const cacheEntry: CacheEntry = {
+      const cacheEntry = {
         value: fixedData,
         lastModified: Date.now(),
         tags: fixedCtx.tags,
       };
 
-      // Serialize the entry
       const serialized = JSON.stringify(cacheEntry);
 
-      // Store the cache entry
-      await this.redisClient!.set(prefixedKey, serialized, {
-        expiration: {
-          type: "EX",
-          value: fixedData.revalidate,
-        },
+      await this.redisClient.set(prefixedKey, serialized, {
+        expiration: { type: "EX", value: fixedData.revalidate },
       });
-      // Update tag indices - add this cache key to each tag's set
-      // Using a pipeline for efficiency (though not strictly atomic)
-      const multi = this.redisClient!.multi();
+
+      const multi = this.redisClient.multi();
 
       for (const tag of fixedCtx.tags) {
         const tagIndexKey = this.getTagIndexKey(tag);
@@ -199,62 +153,45 @@ export default class CacheHandler {
       await multi.exec();
     } catch (error) {
       console.warn("Error setting cache key:", error);
-      return undefined;
     }
   }
 
-  /**
-   * Revalidate (invalidate) cache entries by tag(s)
-   */
-  async revalidateTag(tags: string | string[]): Promise<void> {
+  async revalidateTag(tags) {
+    const tagArray = Array.isArray(tags) ? tags : [tags];
+
     try {
       const connected = await this.ensureConnected();
       if (!connected) {
         console.warn("Redis unavailable in revalidateTag()");
-        return undefined;
+        return;
       }
-
-      const tagArray = Array.isArray(tags) ? tags : [tags];
 
       for (const tag of tagArray) {
         const tagIndexKey = this.getTagIndexKey(tag);
+        const cacheKeys = await this.redisClient.sMembers(tagIndexKey);
 
-        // Get all cache keys associated with this tag
-        const cacheKeys = await this.redisClient!.sMembers(tagIndexKey);
+        if (!cacheKeys.length) continue;
 
-        if (cacheKeys.length === 0) {
-          continue;
-        }
-
-        // Delete all cache entries and the tag index
-        const multi = this.redisClient!.multi();
+        const multi = this.redisClient.multi();
 
         for (const cacheKey of cacheKeys) {
           multi.del(cacheKey);
         }
 
-        // Delete the tag index itself
         multi.del(tagIndexKey);
 
         await multi.exec();
       }
     } catch (error) {
       console.warn("Error revalidating tags:", error);
-      return undefined;
     }
   }
 
-  /**
-   * Reset per-request cache (not needed for Redis-backed cache)
-   */
-  resetRequestCache(): void {
-    // No-op: we don't maintain per-request cache
+  resetRequestCache() {
+    // No-op
   }
 
-  /**
-   * Gracefully disconnect from Redis
-   */
-  async disconnect(): Promise<void> {
+  async disconnect() {
     if (this.redisClient && this.isConnected) {
       try {
         await this.redisClient.quit();
@@ -265,3 +202,10 @@ export default class CacheHandler {
     }
   }
 }
+
+module.exports = {
+  default: CacheHandler,
+  buildTenantUserTag,
+  buildTenantTag,
+  buildTags,
+};
