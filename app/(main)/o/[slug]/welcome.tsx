@@ -94,24 +94,25 @@ export default function Welcome({ tenant, className, profile }: Props) {
       <div className={className}>
         {isMounted ? (
           <>
-            <div className={`h-full flex flex-col justify-center ${inter.className}`}>
+            <div className={`h-full flex flex-col justify-center items-center ${inter.className}`}>
               <Logo
                 name={tenant.name}
-                url={tenant.logoUrl}
-                width={100}
-                height={100}
+                url="https://ezcam.de/wp-content/uploads/2025/07/logo-banner.png"
+                width={200}
+                height={52}
                 className="mb-8"
                 tenantId={tenant.id}
               />
-              <h1 className="mb-12 text-3xl lg:text-[40px] font-bold leading-[50px] text-[#343A40]">
+              <h1 className="mb-12 text-3xl lg:text-[40px] font-bold leading-[50px] text-[#343A40] text-center">
                 {(tenant.welcomeMessage || DEFAULT_WELCOME_MESSAGE).replace("{{company.name}}", tenant.name)}
               </h1>
               {questions.length > 0 && (
                 <div className="flex flex-col md:flex-row items-stretch justify-evenly space-y-4 md:space-y-0 md:space-x-2">
+                  <h3 className="text-base italic text-indigo-500 p-2">Try example questions: </h3>
                   {questions.map((question, i) => (
                     <div
                       key={i}
-                      className={`rounded-md border p-4 w-full md:w-1/3 h-full cursor-pointer`}
+                      className={`rounded-md border p-4 w-full md:w-1/3 h-full cursor-pointer hover:border-indigo-500 hover:bg-indigo-100 duration-200`}
                       onClick={() => handleSubmit(question, selectedModel)}
                     >
                       {question}
@@ -120,6 +121,7 @@ export default function Welcome({ tenant, className, profile }: Props) {
                 </div>
               )}
             </div>
+            <div className="italic p-2 text-gray-400">You can ask anything in your own language</div>
             <div className="w-full flex flex-col items-center p-2 pl-4 rounded-[16px] border border-[#D7D7D7] mt-auto">
               <ChatInput
                 handleSubmit={handleSubmit}

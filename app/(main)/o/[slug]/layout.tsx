@@ -40,16 +40,6 @@ export default async function MainLayout({ children, params }: Props) {
       {profile.role == "admin" && (
         <Footer tenant={tenant} className="h-[80px] shrink-0 w-full bg-[#27272A] flex items-center justify-center" />
       )}
-      {profile.role == "guest" && (
-        <div className="h-20 shrink-0 w-full bg-[#27272A] flex items-center justify-center">
-          <div className={`mr-2.5 text-md text-[#FEFEFE]`}>Powered by</div>
-          <div>
-            <a href="https://ragie.ai/?utm_source=oss-chatbot" target="_blank">
-              <RagieLogo />
-            </a>
-          </div>
-        </div>
-      )}
       <PaymentRequiredDialog tenant={tenant} profile={profile} />
       {displayWelcome && <WelcomeDialog displayWelcome={displayWelcome} userId={user.id} />}
     </div>

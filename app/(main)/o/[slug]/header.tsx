@@ -172,15 +172,7 @@ export default function Header({
       )}
 
       {isAnonymous ? (
-        <div className="flex">
-          <Link
-            className="rounded-lg bg-[#D946EF] text-white px-4 py-2.5 mr-6 flex items-center"
-            href={getSignUpPath()}
-          >
-            Create my own chatbot
-          </Link>
-          <Image src={AnonProfileIcon} alt={name || "Guest"} />
-        </div>
+        <></>
       ) : (
         <Popover>
           <PopoverTrigger asChild>
