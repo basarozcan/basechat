@@ -25,7 +25,18 @@ export const auth = betterAuth({
     schema,
     usePlural: true,
   }),
-  advanced: { generateId: false },
+  advanced: {
+    generateId: false,
+    cookies: {
+      sessionToken: {
+        attributes: {
+          sameSite: "none",
+          secure: true,
+          partitioned: true, // New browser standards will mandate this for foreign cookies
+        },
+      },
+    },
+  },
   socialProviders,
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }, request) => {
@@ -54,18 +65,7 @@ export const auth = betterAuth({
         await linkUsers(anonymousUser.user.id, newUser.user.id);
       },
     }),
-    nextCookies({
-      cookies: {
-        sessionToken: {
-          name: "better-auth.session_token",
-          attributes: {
-            sameSite: "none",
-            secure: true,
-            httpOnly: true,
-          },
-        },
-      },
-    }), // This must be the last plugin
+    nextCookies(), // This must be the last plugin
   ],
 });
 
