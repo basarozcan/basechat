@@ -54,7 +54,18 @@ export const auth = betterAuth({
         await linkUsers(anonymousUser.user.id, newUser.user.id);
       },
     }),
-    nextCookies(), // This must be the last plugin
+    nextCookies({
+      cookies: {
+        sessionToken: {
+          name: "better-auth.session_token",
+          attributes: {
+            sameSite: "none",
+            secure: true,
+            httpOnly: true,
+          },
+        },
+      },
+    }), // This must be the last plugin
   ],
 });
 
