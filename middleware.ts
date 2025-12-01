@@ -6,6 +6,7 @@ import { BASE_URL } from "./lib/server/settings";
 export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
 
+  console.log("🚀 ~ middleware ~ sessionCookie:", !sessionCookie);
   if (!sessionCookie) {
     const pathname = request.nextUrl.pathname;
     if (
