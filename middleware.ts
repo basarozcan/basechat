@@ -6,29 +6,29 @@ import { BASE_URL } from "./lib/server/settings";
 export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
 
-  console.log("🚀 ~ middleware ~ sessionCookie:", !sessionCookie);
-  // if (!sessionCookie) {
-  //   const pathname = request.nextUrl.pathname;
-  //   if (
-  //     pathname !== "/sign-in" &&
-  //     pathname !== "/sign-up" &&
-  //     pathname !== "/reset" &&
-  //     pathname !== "/change-password" &&
-  //     !pathname.startsWith("/check") &&
-  //     !pathname.startsWith("/api/auth/callback") &&
-  //     !pathname.startsWith("/healthz") &&
-  //     !pathname.startsWith("/images")
-  //   ) {
-  //     const redirectPath = getUnauthenticatedRedirectPath(pathname);
-  //     const newUrl = new URL(redirectPath, BASE_URL);
-  //     if (pathname !== "/") {
-  //       const redirectTo = new URL(pathname, BASE_URL);
-  //       redirectTo.search = request.nextUrl.search;
-  //       newUrl.searchParams.set("redirectTo", redirectTo.toString());
-  //     }
-  //     return Response.redirect(newUrl);
-  //   }
-  // }
+  console.log("🚀 ~ middleware ~ sessionCookie:", sessionCookie);
+  if (!sessionCookie) {
+    const pathname = request.nextUrl.pathname;
+    if (
+      pathname !== "/sign-in" &&
+      pathname !== "/sign-up" &&
+      pathname !== "/reset" &&
+      pathname !== "/change-password" &&
+      !pathname.startsWith("/check") &&
+      !pathname.startsWith("/api/auth/callback") &&
+      !pathname.startsWith("/healthz") &&
+      !pathname.startsWith("/images")
+    ) {
+      const redirectPath = getUnauthenticatedRedirectPath(pathname);
+      const newUrl = new URL(redirectPath, BASE_URL);
+      if (pathname !== "/") {
+        const redirectTo = new URL(pathname, BASE_URL);
+        redirectTo.search = request.nextUrl.search;
+        newUrl.searchParams.set("redirectTo", redirectTo.toString());
+      }
+      return Response.redirect(newUrl);
+    }
+  }
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", request.nextUrl.pathname);
   return NextResponse.next({
