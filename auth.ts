@@ -26,7 +26,9 @@ export const auth = betterAuth({
     usePlural: true,
   }),
   advanced: {
-    generateId: false,
+    database: {
+      generateId: false,
+    },
     cookies: {
       sessionToken: {
         attributes: {
