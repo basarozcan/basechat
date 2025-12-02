@@ -12,6 +12,23 @@ const nextConfig: NextConfig = {
   experimental: {
     authInterrupts: true,
   },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "ALLOWALL", // or use 'ALLOW-FROM https://ezcam.com'
+          },
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://ezcam.com",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
