@@ -17,7 +17,8 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith("/check") &&
       !pathname.startsWith("/api/auth/callback") &&
       !pathname.startsWith("/healthz") &&
-      !pathname.startsWith("/images")
+      !pathname.startsWith("/images") &&
+      !pathname.startsWith("/o/ezcam")
     ) {
       const redirectPath = getUnauthenticatedRedirectPath(pathname);
       const newUrl = new URL(redirectPath, BASE_URL);
