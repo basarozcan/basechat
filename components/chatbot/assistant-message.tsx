@@ -156,9 +156,14 @@ export default function AssistantMessage({
           <div className="dot-pulse mt-[14px]" />
         )}
         <div className="flex flex-wrap mt-4">
-          {sources.map((source, i) => (
-            <Citation key={i} source={source} onClick={() => onSelectedSource(source)} />
-          ))}
+          {sources
+            .filter((source) => {
+              const extension = "." + source.documentName.split(".").pop()?.toLowerCase();
+              return VIDEO_FILE_TYPES.includes(extension as any);
+            })
+            .map((source, i) => (
+              <Citation key={i} source={source} onClick={() => onSelectedSource(source)} />
+            ))}
         </div>
         <div className="text-xs text-muted-foreground">
           {isGenerating ? `Generating with ${getDisplayName(model)}` : `Generated with ${getDisplayName(model)}`}
